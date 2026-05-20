@@ -1,4 +1,3 @@
-import { initApp } from "@freeappstore/sdk";
 import { SYSTEM_PROMPT } from "./prompt";
 import { runTool, tools, type ToolDef } from "./tools";
 
@@ -6,8 +5,7 @@ const MODEL = "claude-sonnet-4-6";
 const MAX_TOKENS = 4096;
 const MAX_ITERATIONS = 8;
 const ANTHROPIC_VERSION = "2023-06-01";
-
-const fas = initApp({ appId: "population-agent" });
+const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
 export type AgentEvent =
   | { type: "text"; delta: string }
@@ -55,7 +53,12 @@ const systemWithCache = [
 export async function* runAgent(
   history: MessageParam[],
   userMessage: string,
+  apiKey: string,
 ): AsyncGenerator<AgentEvent> {
+  if (!apiKey.trim()) {
+    yield { type: "error", message: "No Anthropic API key set. Open Settings to add one." };
+    return;
+  }
   const messages: MessageParam[] = [
     ...history,
     { role: "user", content: userMessage },
@@ -71,11 +74,13 @@ export async function* runAgent(
       stream: true,
     };
 
-    const res = await fas.proxy.fetch("api.anthropic.com/v1/messages", {
+    const res = await fetch(ANTHROPIC_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "anthropic-version": ANTHROPIC_VERSION,
+        "x-api-key": apiKey,
+        "anthropic-dangerous-direct-browser-access": "true",
       },
       body: JSON.stringify(body),
     });

@@ -23,12 +23,30 @@ interface AssistantMessage {
 type ChatMessage = UserMessage | AssistantMessage;
 
 const STORAGE_KEY = "population-agent:history";
+const API_KEY_STORAGE = "population-agent:anthropic-key";
 
 const SUGGESTIONS = [
   "What is the population of Australia?",
   "Compare all states and territories.",
   "How fast has Queensland grown since 2015?",
 ];
+
+function loadApiKey(): string {
+  try {
+    return localStorage.getItem(API_KEY_STORAGE) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function saveApiKey(key: string) {
+  try {
+    if (key.trim()) localStorage.setItem(API_KEY_STORAGE, key.trim());
+    else localStorage.removeItem(API_KEY_STORAGE);
+  } catch {
+    // ignore
+  }
+}
 
 function loadHistory(): ChatMessage[] {
   try {
@@ -54,11 +72,17 @@ export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>(loadHistory);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [apiKey, setApiKey] = useState<string>(loadApiKey);
+  const [showSettings, setShowSettings] = useState<boolean>(() => !loadApiKey());
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     saveHistory(messages);
   }, [messages]);
+
+  useEffect(() => {
+    saveApiKey(apiKey);
+  }, [apiKey]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -67,6 +91,10 @@ export default function App() {
 
   async function send(text: string) {
     if (!text.trim() || sending) return;
+    if (!apiKey.trim()) {
+      setShowSettings(true);
+      return;
+    }
     setSending(true);
     const userMsg: UserMessage = { role: "user", text: text.trim() };
     const assistantMsg: AssistantMessage = {
@@ -88,7 +116,7 @@ export default function App() {
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
 
     try {
-      const gen = runAgent(priorPlainHistory, text.trim());
+      const gen = runAgent(priorPlainHistory, text.trim(), apiKey);
       for await (const ev of gen) {
         setMessages((prev) => {
           const updated = [...prev];
@@ -230,19 +258,113 @@ export default function App() {
               </a>
               . Model: Claude Sonnet 4.6.
             </span>
-            {messages.length > 0 && (
+            <span className="flex gap-3">
               <button
                 type="button"
-                onClick={clearChat}
+                onClick={() => setShowSettings(true)}
                 className="underline hover:text-[var(--ink)]"
               >
-                clear chat
+                {apiKey ? "settings" : "set API key"}
               </button>
-            )}
+              {messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearChat}
+                  className="underline hover:text-[var(--ink)]"
+                >
+                  clear chat
+                </button>
+              )}
+            </span>
           </div>
         </form>
+
+        {showSettings && (
+          <SettingsModal
+            currentKey={apiKey}
+            onSave={(k) => {
+              setApiKey(k);
+              setShowSettings(false);
+            }}
+            onClose={() => setShowSettings(false)}
+          />
+        )}
       </div>
     </Shell>
+  );
+}
+
+function SettingsModal({
+  currentKey,
+  onSave,
+  onClose,
+}: {
+  currentKey: string;
+  onSave: (key: string) => void;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState(currentKey);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5 shadow-[var(--shadow-soft)]">
+        <h2 className="display-font text-xl font-bold text-[var(--ink)]">
+          Anthropic API key
+        </h2>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          This app calls the Claude API directly from your browser. Your key is
+          stored in <code className="text-[var(--ink)]">localStorage</code> on
+          this device only — never sent anywhere except{" "}
+          <code className="text-[var(--ink)]">api.anthropic.com</code>. Get a
+          key at{" "}
+          <a
+            href="https://console.anthropic.com/settings/keys"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-[var(--accent)]"
+          >
+            console.anthropic.com
+          </a>
+          .
+        </p>
+        <label className="mt-4 block text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+          API key
+        </label>
+        <input
+          type="password"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="sk-ant-…"
+          autoFocus
+          className="mt-1 w-full rounded-lg border border-[var(--line-strong)] bg-[var(--glass)] px-3 py-2 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"
+        />
+        <div className="mt-4 flex justify-end gap-2">
+          {currentKey && (
+            <button
+              type="button"
+              onClick={() => onSave("")}
+              className="rounded-lg px-3 py-1.5 text-sm text-[var(--muted)] hover:text-[var(--ink)]"
+            >
+              Clear key
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg px-3 py-1.5 text-sm text-[var(--muted)] hover:text-[var(--ink)]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => onSave(draft)}
+            disabled={!draft.trim() && !currentKey}
+            className="rounded-lg bg-[var(--accent)] px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
