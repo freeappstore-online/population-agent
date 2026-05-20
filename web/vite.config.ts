@@ -36,12 +36,14 @@ export default defineConfig({
       manifest: {
         name: 'population-agent',
         short_name: 'population-agent',
-        description: 'Free population-agent app — part of FreeAppStore',
+        description: 'Live Australian population Q&A — chatbot over ABS data. Part of FreeAppStore.',
         start_url: '/',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#111111',
         orientation: 'any',
+        // @ts-expect-error — FAS extension to PWA manifest, declares supported minimum viewport
+        min_viewport_width: 360,
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
