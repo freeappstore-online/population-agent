@@ -46,9 +46,9 @@ jobs:
       - name: CSS variables
         run: |
           CSS_FILE=$(find web/src -name "index.css" | head -1)
-          grep -q "\-\-paper" "$CSS_FILE"
-          grep -q "\-\-ink" "$CSS_FILE"
-          grep -q "\-\-accent" "$CSS_FILE"
+          grep -qE "\-\-paper|\-\-color-paper" "$CSS_FILE"
+          grep -qE "\-\-ink|\-\-color-ink" "$CSS_FILE"
+          grep -qE "\-\-accent|\-\-color-accent" "$CSS_FILE"
 
       - name: HTML meta tags
         run: |
