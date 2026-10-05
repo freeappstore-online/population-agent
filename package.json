@@ -1,7 +1,7 @@
 {
   "name": "population-agent",
   "private": true,
-  "packageManager": "pnpm@10.30.3",
+  "packageManager": "pnpm@9.15.4",
   "engines": { "node": ">=22" },
   "pnpm": { "onlyBuiltDependencies": ["esbuild"] },
   "scripts": {
