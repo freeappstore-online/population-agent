@@ -113,7 +113,7 @@ export const tools: ToolDef[] = [
   {
     name: "query_abs_dataset",
     description:
-      "Generic escape hatch: query ANY ABS dataflow with an SDMX key. Use this when the specific tools above don't fit. The SDMX key is a dot-separated string of dimension codes — use empty strings (consecutive dots) for 'all values' of a dimension. Example: dataflow='ERP_Q', key='1.3.TT.AUS.AUS.Q' for total Australian population. If you don't know a dataflow's key shape, call `list_abs_dataflows` first.",
+      "Generic escape hatch: query ANY ABS dataflow with an SDMX key. Use this when the specific tools above don't fit. The SDMX key is a dot-separated string of dimension codes — use empty strings (consecutive dots) for 'all values' of a dimension. Example: dataflow='ERP_Q', key='1.3.TOT.AUS.Q' for total Australian population. If you don't know a dataflow's key shape, call `list_abs_dataflows` first.",
     input_schema: {
       type: "object",
       properties: {

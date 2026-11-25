@@ -4,7 +4,7 @@
 // other dataflows publicly with CORS enabled. The flattener turns SDMX-JSON's
 // positional index encoding into plain {period, value, dimensions} rows.
 
-const ABS_BASE = "https://data.api.abs.gov.au";
+const ABS_BASE = "https://data.api.abs.gov.au/rest";
 const MAX_OBSERVATIONS_RETURNED = 200;
 
 export const STATE_NAMES: Record<string, string> = {
@@ -189,10 +189,10 @@ function trimObservations(observations: Observation[]) {
 
 function buildErpKey(region: string, sex: string): string {
   const sexCode = SEX_CODE[sex] ?? SEX_CODE.persons;
-  if (region === "AUS") return `1.${sexCode}.TT.AUS.AUS.Q`;
+  if (region === "AUS") return `1.${sexCode}.TOT.AUS.Q`;
   const code = STATE_REGION_CODE[region];
   if (!code) throw new Error(`Unknown region: ${region}`);
-  return `1.${sexCode}.TT.STE.${code}.Q`;
+  return `1.${sexCode}.TOT.${code}.Q`;
 }
 
 export async function queryErp(opts: {
@@ -224,7 +224,7 @@ export async function queryErpAllStates(opts: {
 }): Promise<DatasetResult> {
   const sexCode = SEX_CODE[opts.sex] ?? SEX_CODE.persons;
   const stateCodes = Object.values(STATE_REGION_CODE).join("+");
-  const key = `1.${sexCode}.TT.STE.${stateCodes}.Q`;
+  const key = `1.${sexCode}.TOT.${stateCodes}.Q`;
   const { url, payload } = await fetchSdmx(`/data/ERP_Q/${key}`, {
     startPeriod: opts.startPeriod,
     endPeriod: opts.endPeriod,
@@ -279,7 +279,7 @@ interface DataflowListResponse {
 export async function listDataflows(search?: string): Promise<
   Array<{ id: string; name: string; description?: string }>
 > {
-  const url = `${ABS_BASE}/dataflow/ABS?format=jsondata`;
+  const url = `${ABS_BASE}/dataflow/ABS`;
   const res = await fetch(url, {
     headers: {
       Accept:
